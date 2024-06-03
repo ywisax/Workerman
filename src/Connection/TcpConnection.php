@@ -841,21 +841,22 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      * This method pulls all the data out of a readable stream, and writes it to the supplied destination.
      *
      * @param self $dest
+     * @param bool $raw
      * @return void
      */
-    public function pipe(self $dest): void
+    public function pipe(self $dest, $raw = false)
     {
-        $source = $this;
-        $this->onMessage = function ($source, $data) use ($dest) {
-            $dest->send($data);
+        $source              = $this;
+        $this->onMessage     = function ($source, $data) use ($dest, $raw) {
+            $dest->send($data, $raw);
         };
-        $this->onClose = function () use ($dest) {
+        $this->onClose       = function ($source) use ($dest) {
             $dest->close();
         };
-        $dest->onBufferFull = function () use ($source) {
+        $dest->onBufferFull  = function ($dest) use ($source) {
             $source->pauseRecv();
         };
-        $dest->onBufferDrain = function () use ($source) {
+        $dest->onBufferDrain = function ($dest) use ($source) {
             $source->resumeRecv();
         };
     }
